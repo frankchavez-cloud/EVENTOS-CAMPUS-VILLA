@@ -61,7 +61,7 @@ function parseCSV(text) {
     const c = text[i], n = text[i + 1];
     if (c === '"' && inQuotes && n === '"') { field += '"'; i++; }
     else if (c === '"') inQuotes = !inQuotes;
-    else if (c === "," && !inQuotes) { row.push(field); field = ""; }
+    else if ((c === "," || c === ";") && !inQuotes) { row.push(field); field = ""; }
     else if ((c === "\n" || c === "\r") && !inQuotes) {
       if (c === "\r" && n === "\n") i++;
       row.push(field); field = "";
