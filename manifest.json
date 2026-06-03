@@ -1,0 +1,8 @@
+{
+  "name": "Eventos Campus Villa V5 Executive",
+  "short_name": "Eventos V5",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#09121f",
+  "theme_color": "#7A0019"
+}
