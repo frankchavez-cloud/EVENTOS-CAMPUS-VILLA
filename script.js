@@ -300,15 +300,22 @@ function eventCardHTML(e) {
   return `<article class="event-card ${priorityClass(e.prioridad)}">
       <div class="event-time">${e.hora}</div>
       <div class="event-title">${e.evento}</div>
-      <div class="badges">
-        <span class="badge">Área: ${e.area || "-"}</span>
-        <span class="badge">📍 ${e.ubicacion || "Sin ubicación"}</span>
-        <span class="badge">${e.ot || "Sin OT"}</span>
-        <span class="badge">${e.prioridad || "-"}</span>
-        <span class="badge">${e.categoria || "-"}</span>
-        <span class="badge">${e.estado || "-"}</span>
-      </div>
-      <div class="requirements"><strong>Requerimientos / atención:</strong><br>${e.requerimientos || "Sin anotaciones registradas."}</div>
+ <div class="badges">
+  <span class="badge area">🔴 Área: ${e.area || "-"}</span>
+  <span class="badge sede">🔵 Sede: ${e.ubicacion || "Sin ubicación"}</span>
+  <span class="badge ot">🟣 OT/SOL: ${e.ot || "Sin OT"}</span>
+  <span class="badge prioridad">🟠 Prioridad: ${e.prioridad || "-"}</span>
+</div>
+      <div class="requirements">
+<strong>Requerimientos / atención:</strong>
+<ul>
+${(e.requerimientos || "")
+  .split(";")
+  .filter(x => x.trim() !== "")
+  .map(x => `<li>✓ ${x.trim()}</li>`)
+  .join("")}
+</ul>
+</div>
     </article>`;
 }
 function openModal(iso) {
