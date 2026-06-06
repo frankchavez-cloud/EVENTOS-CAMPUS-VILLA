@@ -1,17 +1,27 @@
-# EVENTOS CAMPUS VILLA V5 EXECUTIVE
+# EVENTOS CAMPUS VILLA V6
 
-Nuevo proyecto basado en Excel directo.
+Versión V6: lectura directa desde Excel.
 
-## Archivos
+## Flujo de actualización
+
+1. Edita el archivo:
+   PLANTILLA CONTROL EVENTOS CAMPUS VILLA.xlsx
+
+2. Guarda el Excel.
+
+3. Súbelo a GitHub reemplazando el archivo existente.
+
+4. Espera 1 minuto y presiona Ctrl + Shift + R en el dashboard.
+
+## Ya no necesitas CSV
+
+El dashboard lee directamente el archivo Excel mediante SheetJS.
+
+## Archivos necesarios en GitHub
+
 - index.html
 - script.js
 - style.css
 - PLANTILLA CONTROL EVENTOS CAMPUS VILLA.xlsx
 - manifest.json
 - favicon.ico
-
-## GitHub
-Crear un repositorio nuevo llamado:
-eventos-villa-v5
-
-Actualizar únicamente el Excel para futuras versiones.

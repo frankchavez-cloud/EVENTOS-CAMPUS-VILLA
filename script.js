@@ -27,7 +27,7 @@ function login() {
   if (pass === PASSWORD) {
     document.getElementById("login").classList.add("hidden");
     document.getElementById("app").classList.remove("hidden");
-    cargarCSV();
+    cargarExcel();
   } else {
     alert("Contraseña incorrecta");
   }
@@ -37,18 +37,27 @@ function logout() {
   document.getElementById("login").classList.remove("hidden");
 }
 
-async function cargarCSV() {
+async function cargarExcel() {
   const status = document.getElementById("statusMessage");
   try {
-    const response = await fetch("CONTROL_EVENTOS.csv?t=" + Date.now());
-    if (!response.ok) throw new Error("No se pudo leer CONTROL_EVENTOS.csv");
-    const text = await response.text();
-    eventosBase = parseCSV(text).map(mapRow).filter(e => e.fecha && e.evento);
+    const response = await fetch("PLANTILLA CONTROL EVENTOS CAMPUS VILLA.xlsx?t=" + Date.now());
+    if (!response.ok) throw new Error("No se pudo leer PLANTILLA CONTROL EVENTOS CAMPUS VILLA.xlsx");
+
+    const arrayBuffer = await response.arrayBuffer();
+    const workbook = XLSX.read(arrayBuffer, { type: "array", cellDates: true });
+
+    const sheetName = workbook.SheetNames.includes("EVENTOS") ? "EVENTOS" : workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: "", raw: false });
+
+    eventosBase = rows.map(mapRow).filter(e => e.fecha && e.evento);
+
     initFilters();
-    status.textContent = `Eventos cargados: ${eventosBase.length}`;
+    status.textContent = `Eventos cargados desde Excel: ${eventosBase.length}`;
     render();
   } catch (err) {
-    status.textContent = "Error: no se pudo cargar CONTROL_EVENTOS.csv. Verifica que esté subido junto a index.html.";
+    status.textContent = "Error: no se pudo cargar el Excel. Verifica que 'PLANTILLA CONTROL EVENTOS CAMPUS VILLA.xlsx' esté subido junto a index.html.";
     console.error(err);
   }
 }
@@ -98,23 +107,63 @@ function normalizePriority(p) {
   return s;
 }
 function normalizeDate(value) {
-  value = String(value || "").trim();
-  if (!value) return "";
-  const parts = value.split(/[\/\-]/);
+  if (value === null || value === undefined || value === "") return "";
+
+  if (value instanceof Date && !isNaN(value)) {
+    const y = value.getFullYear();
+    const m = String(value.getMonth() + 1).padStart(2, "0");
+    const d = String(value.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
+  if (typeof value === "number") {
+    const date = new Date(Math.round((value - 25569) * 86400 * 1000));
+    const y = date.getUTCFullYear();
+    const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const d = String(date.getUTCDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
+  let s = String(value || "").trim();
+  if (!s) return "";
+
+  let matchIso = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+  if (matchIso) {
+    const y = matchIso[1];
+    const m = String(matchIso[2]).padStart(2, "0");
+    const d = String(matchIso[3]).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
+  const parts = s.split(/[\/\-]/);
   if (parts.length === 3) {
     let d, m, y;
-    if (parts[0].length === 4) { y = parts[0]; m = parts[1]; d = parts[2]; }
-    else { d = parts[0]; m = parts[1]; y = parts[2]; }
+    if (parts[0].length === 4) {
+      y = parts[0]; m = parts[1]; d = parts[2];
+    } else {
+      d = parts[0]; m = parts[1]; y = parts[2];
+    }
     return `${String(y).padStart(4,"0")}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
   }
-  return value;
+
+  return s;
 }
 function normalizeTime(value) {
-  value = String(value || "").trim();
-  if (!value) return "";
-  const match = value.match(/(\d{1,2})[:;](\d{2})/);
+  if (value === null || value === undefined || value === "") return "";
+
+  if (value instanceof Date && !isNaN(value)) {
+    const h = String(value.getHours()).padStart(2, "0");
+    const m = String(value.getMinutes()).padStart(2, "0");
+    return `${h}:${m}`;
+  }
+
+  const s = String(value || "").trim();
+  if (!s) return "";
+
+  const match = s.match(/(\d{1,2})[:;](\d{2})/);
   if (match) return `${match[1].padStart(2,"0")}:${match[2]}`;
-  return value;
+
+  return s;
 }
 function updateClock() {
   const now = new Date();
