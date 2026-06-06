@@ -139,13 +139,19 @@ function normalizeDate(value) {
 
 if (parts.length === 3) {
 
-    // Formato YYYY-MM-DD
+    // YYYY-MM-DD
     if (parts[0].length === 4) {
         return `${parts[0]}-${parts[1].padStart(2,"0")}-${parts[2].padStart(2,"0")}`;
     }
 
-    // Formato DD/MM/YYYY
-    return `${parts[2]}-${parts[1].padStart(2,"0")}-${parts[0].padStart(2,"0")}`;
+    // DD/MM/YY o DD/MM/YYYY
+    let year = parts[2];
+
+    if (year.length === 2) {
+        year = "20" + year;
+    }
+
+    return `${year}-${parts[1].padStart(2,"0")}-${parts[0].padStart(2,"0")}`;
 }
 
   return s;
