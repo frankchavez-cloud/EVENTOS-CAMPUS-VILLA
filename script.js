@@ -308,13 +308,22 @@ function eventCardHTML(e) {
 </div>
       <div class="requirements">
 <strong>Requerimientos / atención:</strong>
+
 <ul>
 ${(e.requerimientos || "")
-  .split(/;|\n|\r\n/)
-  .filter(x => x.trim() !== "")
-  .map(x => `<li>✓ ${x.trim()}</li>`)
-  .join("")}
+    .replace(/Requerimiento:/gi, "<h4>📋 Requerimiento</h4>")
+    .replace(/Layout:/gi, "<h4>📐 Layout</h4>")
+    .replace(/Instalación:/gi, "<h4>🔧 Instalación</h4>")
+    .replace(/Retiro:/gi, "<h4>🚚 Retiro</h4>")
+    .split(/[\n;]+/)
+    .filter(x => x.trim() !== "")
+    .map(x => {
+        if(x.includes("<h4>")) return x;
+        return `<li>✓ ${x.trim()}</li>`;
+    })
+    .join("")}
 </ul>
+
 </div>
     </article>`;
 }
