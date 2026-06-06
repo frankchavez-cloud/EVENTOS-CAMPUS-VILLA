@@ -136,15 +136,17 @@ function normalizeDate(value) {
   }
 
   const parts = s.split(/[\/\-]/);
-  if (parts.length === 3) {
-    let d, m, y;
+
+if (parts.length === 3) {
+
+    // Formato YYYY-MM-DD
     if (parts[0].length === 4) {
-      y = parts[0]; m = parts[1]; d = parts[2];
-    } else {
-      d = parts[0]; m = parts[1]; y = parts[2];
+        return `${parts[0]}-${parts[1].padStart(2,"0")}-${parts[2].padStart(2,"0")}`;
     }
-    return `${String(y).padStart(4,"0")}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-  }
+
+    // Formato DD/MM/YYYY
+    return `${parts[2]}-${parts[1].padStart(2,"0")}-${parts[0].padStart(2,"0")}`;
+}
 
   return s;
 }
