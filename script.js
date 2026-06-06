@@ -310,7 +310,7 @@ function eventCardHTML(e) {
 <strong>Requerimientos / atención:</strong>
 <ul>
 ${(e.requerimientos || "")
-  .split(";")
+  .split(/;|\n|\r\n/)
   .filter(x => x.trim() !== "")
   .map(x => `<li>✓ ${x.trim()}</li>`)
   .join("")}
