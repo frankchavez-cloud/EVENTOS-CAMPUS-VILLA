@@ -42,6 +42,8 @@ async function cargarExcel() {
   try {
     const response = await fetch("PLANTILLA CONTROL EVENTOS CAMPUS VILLA.xlsx?t=" + Date.now());
     if (!response.ok) throw new Error("No se pudo leer PLANTILLA CONTROL EVENTOS CAMPUS VILLA.xlsx");
+    console.log("URL Excel:", response.url);
+console.log("STATUS:", response.status);
 
     const arrayBuffer = await response.arrayBuffer();
     const workbook = XLSX.read(arrayBuffer, { type: "array", cellDates: true });
