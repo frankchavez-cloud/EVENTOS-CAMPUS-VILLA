@@ -629,3 +629,8 @@ button:hover,
     transform: scale(1.03);
   }
 }
+
+.modal-tabs{display:flex;gap:10px;margin:10px 0}
+.modal-tabs button{padding:8px 12px;font-weight:bold}
+.operativo-card{border:1px solid #ddd;border-radius:8px;padding:10px;margin-bottom:10px}
+.hidden{display:none}

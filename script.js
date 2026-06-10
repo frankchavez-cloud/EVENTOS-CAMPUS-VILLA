@@ -1,3 +1,18 @@
+
+function buildOperativoHTML(events){
+ return events.sort((a,b)=>a.hora.localeCompare(b.hora)).map(e=>`
+ <div class="operativo-card">
+ <h3>📍 ${e.ubicacion||"Sin ubicación"}</h3>
+ <div><strong>Hora:</strong> ${e.hora}</div>
+ <div><strong>Evento:</strong> ${e.evento}</div>
+ <div><strong>Requerimientos:</strong></div>
+ <ul>${String(e.requerimientos||"").split(/[\n;]/).filter(x=>x.trim()).map(x=>`<li>${x}</li>`).join("")}</ul>
+ </div>`).join("");
+}
+function showModalTab(tab){
+ document.getElementById("eventScroll").classList.toggle("hidden",tab!=="eventos");
+ document.getElementById("operativoScroll").classList.toggle("hidden",tab!=="operativo");
+}
 const PASSWORD = "villa2026";
 let eventosBase = [];
 let currentDate = new Date(2026, 5, 1);
@@ -301,9 +316,22 @@ function updateKPIs() {
   const year = currentDate.getFullYear(), month = currentDate.getMonth();
   const holidayCount = Object.keys(feriadosPeru2026).filter(iso => { const d = parseDate(iso); return d.getFullYear() === year && d.getMonth() === month; }).length;
   document.getElementById("kpiTotal").textContent = events.length;
-  document.getElementById("kpiDone").textContent = events.filter(e => normalize(e.estado).includes("ejecut")).length;
+  const hoyIso = toISODate(new Date());
+  const hoyEventos = events.filter(e => e.fecha === hoyIso);
+  document.getElementById("kpiDone").textContent = hoyEventos.length;
   document.getElementById("kpiPending").textContent = events.filter(e => normalize(e.estado).includes("pend")).length;
-  document.getElementById("kpiHigh").textContent = events.filter(e => priorityClass(e.prioridad)==="alta").length;
+  const ahora = new Date();
+  let proximoTxt = "0";
+  const futuros = hoyEventos.filter(e => e.hora).map(e=>{
+    const [h,m]=String(e.hora).split(":");
+    const d=new Date(); d.setHours(+h||0,+m||0,0,0);
+    return {e,d};
+  }).filter(x=>x.d>ahora).sort((a,b)=>a.d-b.d);
+  if(futuros.length){
+    const mins=Math.floor((futuros[0].d-ahora)/60000);
+    proximoTxt=`${Math.floor(mins/60)}h ${mins%60}m`;
+  }
+  document.getElementById("kpiHigh").textContent = proximoTxt;
   document.getElementById("kpiHoliday").textContent = holidayCount;
 }
 function eventCardHTML(e) {
@@ -346,6 +374,9 @@ function openModal(iso) {
   document.getElementById("modalInfo").textContent = feriadosPeru2026[iso] ? `🇵🇪 ${feriadosPeru2026[iso]} · ${events.length} evento(s)` : `${events.length} evento(s) registrado(s)`;
   if (!events.length) scroll.innerHTML = `<div class="no-events">No hay eventos registrados para este día.</div>`;
   else scroll.innerHTML = events.map(eventCardHTML).join("");
+  document.getElementById("eventScroll").innerHTML = events.length ? events.map(eventCardHTML).join("") : `<div class="no-events">No hay eventos registrados para este día.</div>`;
+  document.getElementById("operativoScroll").innerHTML = buildOperativoHTML(events);
+  showModalTab("eventos");
   modal.classList.remove("hidden");
   scroll.scrollTop = 0;
   setTimeout(updateFocusedCard, 100);
@@ -359,6 +390,8 @@ function openKpiModal(type) {
   const events = monthEvents().sort((a,b) => a.fecha.localeCompare(b.fecha) || a.hora.localeCompare(b.hora));
   let rows = [];
   if (type === "eventos") { title.textContent = "TODOS LOS EVENTOS"; rows = events; }
+  if (type === "hoy") { title.textContent = "EVENTOS DE HOY"; rows = events.filter(e=>e.fecha===toISODate(new Date())); }
+  if (type === "proximo") { title.textContent = "PRÓXIMO EVENTO"; rows = events.filter(e=>e.fecha>=toISODate(new Date())).slice(0,1); }
   if (type === "ejecutados") { title.textContent = "EVENTOS EJECUTADOS"; rows = events.filter(e => normalize(e.estado).includes("ejecut")); }
   if (type === "pendientes") { title.textContent = "EVENTOS PENDIENTES"; rows = events.filter(e => normalize(e.estado).includes("pend")); }
   if (type === "alta") { title.textContent = "PRIORIDAD ALTA"; rows = events.filter(e => priorityClass(e.prioridad)==="alta"); }
