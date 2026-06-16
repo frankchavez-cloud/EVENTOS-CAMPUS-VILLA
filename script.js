@@ -319,7 +319,10 @@ function updateKPIs() {
   const hoyIso = toISODate(new Date());
   const hoyEventos = events.filter(e => e.fecha === hoyIso);
   document.getElementById("kpiDone").textContent = hoyEventos.length; // HOY
-  document.getElementById("kpiPending").textContent = events.filter(e => normalize(e.estado).includes("pend")).length;
+  const manana = new Date();
+  manana.setDate(manana.getDate()+1);
+  const mananaIso = toISODate(manana);
+  document.getElementById("kpiPending").textContent = events.filter(e => e.fecha === mananaIso).length;
   const ahora = new Date();
   let proximoTxt = "0";
   const futuros = hoyEventos.filter(e => e.hora).map(e=>{
@@ -379,7 +382,11 @@ function openModal(iso) {
   showModalTab("eventos");
   modal.classList.remove("hidden");
   scroll.scrollTop = 0;
-  setTimeout(updateFocusedCard, 100);
+ 
+  setTimeout(() => {
+    updateFocusedCard();
+}, 200);
+
 }
 function closeModal() { document.getElementById("eventModal").classList.add("hidden"); }
 
@@ -442,6 +449,13 @@ else if(type==="hoy"){
    rows=events.filter(e=>e.fecha===toISODate(new Date()));
 }
 
+else if(type==="manana"){
+   title.textContent="EVENTOS DE MAÑANA";
+   const manana = new Date();
+   manana.setDate(manana.getDate()+1);
+   rows = events.filter(e=>e.fecha===toISODate(manana));
+}
+
 else if(type==="proximo"){
 
    title.textContent="PRÓXIMO EVENTO";
@@ -472,18 +486,58 @@ else if(type==="proximo"){
 function closeKpiModal() { document.getElementById("kpiModal").classList.add("hidden"); }
 
 function updateFocusedCard() {
-  const container = document.getElementById("eventScroll");
-  const cards = container.querySelectorAll(".event-card");
-  if (!cards.length) return;
-  const center = container.getBoundingClientRect().top + container.clientHeight/2;
-  let closest = null, min = Infinity;
-  cards.forEach(card => {
-    const rect = card.getBoundingClientRect();
-    const distance = Math.abs(center - (rect.top + rect.height/2));
-    card.classList.remove("focused");
-    if (distance < min) { min = distance; closest = card; }
-  });
-  if (closest) closest.classList.add("focused");
+
+    const container =
+        document.getElementById("eventScroll");
+
+    const cards =
+        container.querySelectorAll(".event-card");
+
+    if (!cards.length) return;
+    if (
+    container.scrollTop + container.clientHeight >=
+    container.scrollHeight - 20
+) {
+    cards.forEach(card =>
+        card.classList.remove("focused")
+    );
+
+    cards[cards.length - 1]
+        .classList.add("focused");
+
+    return;
 }
+
+    let closest = null;
+
+    cards.forEach(card => {
+
+        const rect =
+            card.getBoundingClientRect();
+
+        const modalTop =
+            container.getBoundingClientRect().top;
+
+        if (rect.top >= modalTop - 50) {
+
+            if (!closest) {
+                closest = card;
+            }
+
+        }
+
+    });
+
+    cards.forEach(card => {
+        card.classList.remove("focused");
+    });
+
+    if (closest) {
+        closest.classList.add("focused");
+    }
+}
+
 document.getElementById("eventScroll").addEventListener("scroll", updateFocusedCard);
 document.addEventListener("keydown", e => { if (e.key === "Escape") { closeModal(); closeKpiModal(); } });
+
+setTimeout(updateFocusedCard,100);
