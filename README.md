@@ -25,3 +25,25 @@ El dashboard lee directamente el archivo Excel mediante SheetJS.
 - PLANTILLA CONTROL EVENTOS CAMPUS VILLA.xlsx
 - manifest.json
 - favicon.ico
+
+
+## V7.4 Ejecutiva
+
+Mejoras incluidas:
+- Modal de eventos con línea de tiempo vertical.
+- Evento enfocado más estable durante el scroll.
+- Corrección para que el último evento también se destaque.
+- Tarjetas con contador de posición del evento.
+- Resumen ejecutivo del día con alta prioridad y ubicaciones.
+- Requerimientos con etiquetas visuales e iconos.
+- Indicadores de estado: Próximo, En curso y Finalizado.
+- Animación suavizada para evitar temblores.
+
+
+## V7.5 Operativa
+- Tarjetas de eventos con tamaño uniforme para evitar saltos visuales.
+- Requerimientos siempre visibles en formato etiqueta.
+- Scroll estable sin crecimiento/desplazamiento irregular.
+- Foco visual por borde, sombra y línea de tiempo activa.
+- Corrección del KPI Feriados Perú para mostrar feriados del mes y eventos asociados, no todos los eventos.
+- Consulta de disponibilidad por fecha y ubicación/ambiente.

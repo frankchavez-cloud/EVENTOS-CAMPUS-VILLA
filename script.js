@@ -337,35 +337,81 @@ function updateKPIs() {
   document.getElementById("kpiHigh").textContent = proximoTxt;
   document.getElementById("kpiHoliday").textContent = holidayCount;
 }
-function eventCardHTML(e) {
-  return `<article class="event-card ${priorityClass(e.prioridad)}">
-      <div class="event-time">${e.hora}</div>
+
+function splitRequirements(text) {
+  return String(text || "")
+    .replace(/Requerimiento:/gi, "")
+    .replace(/Layout:/gi, "Layout:")
+    .replace(/Instalación:/gi, "Instalación:")
+    .replace(/Retiro:/gi, "Retiro:")
+    .split(/[\/;\n]+/)
+    .map(x => x.trim())
+    .filter(Boolean);
+}
+
+function reqIcon(text) {
+  const t = normalize(text);
+  if (t.includes("energia") || t.includes("luz") || t.includes("tomacorriente") || t.includes("punto")) return "🔌";
+  if (t.includes("mesa") || t.includes("silla") || t.includes("mobiliario") || t.includes("butaca")) return "🪑";
+  if (t.includes("limpio") || t.includes("limpieza")) return "🧹";
+  if (t.includes("audio") || t.includes("micro") || t.includes("parlante")) return "🎤";
+  if (t.includes("banner") || t.includes("señal") || t.includes("senal")) return "🏷️";
+  if (t.includes("retiro")) return "🚚";
+  return "✓";
+}
+
+function eventStatusLabel(e, iso) {
+  const today = toISODate(new Date());
+  if (iso !== today) return "";
+  if (!e.hora) return "";
+  const [h,m] = String(e.hora).split(":");
+  const start = new Date();
+  start.setHours(+h || 0, +m || 0, 0, 0);
+  const now = new Date();
+  const diff = Math.round((start - now) / 60000);
+  if (diff < -60) return `<span class="status-pill done">Finalizado</span>`;
+  if (diff <= 0) return `<span class="status-pill live">En curso</span>`;
+  if (diff <= 120) return `<span class="status-pill next">Próximo</span>`;
+  return "";
+}
+
+function dayExecutiveSummary(events, iso) {
+  const sedes = new Set(events.map(e => e.ubicacion).filter(Boolean)).size;
+  const altas = events.filter(e => priorityClass(e.prioridad) === "alta").length;
+  const total = events.length;
+  const label = feriadosPeru2026[iso] ? `🇵🇪 ${feriadosPeru2026[iso]} · ` : "";
+  return `
+    <span>${label}${total} evento(s) registrado(s)</span>
+    <span class="modal-metrics">
+      <b>${altas}</b> alta prioridad · <b>${sedes}</b> ubicación(es)
+    </span>
+    <span class="day-progress"><i style="width:${total ? 100 : 0}%"></i></span>
+  `;
+}
+
+function eventCardHTML(e, index = 0, total = 1, iso = "") {
+  const reqs = splitRequirements(e.requerimientos);
+  const status = eventStatusLabel(e, iso);
+  return `<article class="event-card ${priorityClass(e.prioridad)}" data-event-index="${index + 1}">
+      <div class="timeline-dot"></div>
+      <div class="event-topline">
+        <div class="event-time">${e.hora || "--:--"}</div>
+        <div class="event-count">${index + 1} / ${total}</div>
+      </div>
       <div class="event-title">${e.evento}</div>
- <div class="badges">
-  <span class="badge area">🔴 Área: ${e.area || "-"}</span>
-  <span class="badge sede">🔵 Sede: ${e.ubicacion || "Sin ubicación"}</span>
-  <span class="badge ot">🟣 OT/SOL: ${e.ot || "Sin OT"}</span>
-  <span class="badge prioridad">🟠 Prioridad: ${e.prioridad || "-"}</span>
-</div>
+      ${status}
+      <div class="badges">
+        <span class="badge area">🏢 Área: ${e.area || "-"}</span>
+        <span class="badge sede">📍 Sede: ${e.ubicacion || "Sin ubicación"}</span>
+        <span class="badge ot">📧 OT/SOL: ${e.ot || "Sin OT"}</span>
+        <span class="badge prioridad">🔥 Prioridad: ${e.prioridad || "-"}</span>
+      </div>
       <div class="requirements">
-<strong>Requerimientos / atención:</strong>
-
-<ul>
-${(e.requerimientos || "")
-    .replace(/Requerimiento:/gi, "<h4>📋 Requerimiento</h4>")
-    .replace(/Layout:/gi, "<h4>📐 Layout</h4>")
-    .replace(/Instalación:/gi, "<h4>🔧 Instalación</h4>")
-    .replace(/Retiro:/gi, "<h4>🚚 Retiro</h4>")
-    .split(/[\n;]+/)
-    .filter(x => x.trim() !== "")
-    .map(x => {
-        if(x.includes("<h4>")) return x;
-        return `<li>✓ ${x.trim()}</li>`;
-    })
-    .join("")}
-</ul>
-
-</div>
+        <strong>Requerimientos / atención:</strong>
+        <div class="req-chip-list">
+          ${reqs.length ? reqs.map(x => `<span class="req-chip">${reqIcon(x)} ${x}</span>`).join("") : `<span class="req-chip">✓ Sin requerimientos registrados</span>`}
+        </div>
+      </div>
     </article>`;
 }
 function openModal(iso) {
@@ -373,20 +419,24 @@ function openModal(iso) {
   const scroll = document.getElementById("eventScroll");
   const events = filteredEvents().filter(e => e.fecha === iso).sort((a,b) => a.hora.localeCompare(b.hora));
   const date = parseDate(iso);
-  document.getElementById("modalDate").textContent = date.toLocaleDateString("es-PE", { weekday:"long", day:"2-digit", month:"long", year:"numeric" }).toUpperCase();
-  document.getElementById("modalInfo").textContent = feriadosPeru2026[iso] ? `🇵🇪 ${feriadosPeru2026[iso]} · ${events.length} evento(s)` : `${events.length} evento(s) registrado(s)`;
-  if (!events.length) scroll.innerHTML = `<div class="no-events">No hay eventos registrados para este día.</div>`;
-  else scroll.innerHTML = events.map(eventCardHTML).join("");
-  document.getElementById("eventScroll").innerHTML = events.length ? events.map(eventCardHTML).join("") : `<div class="no-events">No hay eventos registrados para este día.</div>`;
+
+  document.getElementById("modalDate").textContent =
+    date.toLocaleDateString("es-PE", { weekday:"long", day:"2-digit", month:"long", year:"numeric" }).toUpperCase();
+
+  document.getElementById("modalInfo").innerHTML = dayExecutiveSummary(events, iso);
+
+  scroll.innerHTML = events.length
+    ? events.map((e,i) => eventCardHTML(e, i, events.length, iso)).join("")
+    : `<div class="no-events">No hay eventos registrados para este día.</div>`;
+
   document.getElementById("operativoScroll").innerHTML = buildOperativoHTML(events);
   showModalTab("eventos");
   modal.classList.remove("hidden");
   scroll.scrollTop = 0;
- 
+
   setTimeout(() => {
     updateFocusedCard();
-}, 200);
-
+  }, 220);
 }
 function closeModal() { document.getElementById("eventModal").classList.add("hidden"); }
 
@@ -456,6 +506,14 @@ else if(type==="manana"){
    rows = events.filter(e=>e.fecha===toISODate(manana));
 }
 
+else if(type==="feriados"){
+   title.textContent="FERIADOS PERÚ";
+   info.textContent="Feriados del mes seleccionado";
+   list.innerHTML = buildFeriadosHTML();
+   document.getElementById("kpiModal").classList.remove("hidden");
+   return;
+}
+
 else if(type==="proximo"){
 
    title.textContent="PRÓXIMO EVENTO";
@@ -486,58 +544,37 @@ else if(type==="proximo"){
 function closeKpiModal() { document.getElementById("kpiModal").classList.add("hidden"); }
 
 function updateFocusedCard() {
+  const container = document.getElementById("eventScroll");
+  if (!container || container.classList.contains("hidden")) return;
 
-    const container =
-        document.getElementById("eventScroll");
+  const cards = container.querySelectorAll(".event-card");
+  if (!cards.length) return;
 
-    const cards =
-        container.querySelectorAll(".event-card");
+  cards.forEach(card => card.classList.remove("focused"));
 
-    if (!cards.length) return;
-    if (
-    container.scrollTop + container.clientHeight >=
-    container.scrollHeight - 20
-) {
-    cards.forEach(card =>
-        card.classList.remove("focused")
-    );
-
-    cards[cards.length - 1]
-        .classList.add("focused");
-
+  if (container.scrollTop + container.clientHeight >= container.scrollHeight - 24) {
+    cards[cards.length - 1].classList.add("focused");
     return;
-}
+  }
 
-    let closest = null;
+  const containerTop = container.getBoundingClientRect().top;
+  const focusLine = containerTop + Math.min(260, container.clientHeight * 0.38);
 
-    cards.forEach(card => {
+  let closest = null;
+  let best = Infinity;
 
-        const rect =
-            card.getBoundingClientRect();
+  cards.forEach(card => {
+    const rect = card.getBoundingClientRect();
+    const distance = Math.abs(rect.top - focusLine);
 
-        const modalTop =
-            container.getBoundingClientRect().top;
-
-        if (rect.top >= modalTop - 50) {
-
-            if (!closest) {
-                closest = card;
-            }
-
-        }
-
-    });
-
-    cards.forEach(card => {
-        card.classList.remove("focused");
-    });
-
-    if (closest) {
-        closest.classList.add("focused");
+    if (rect.bottom > containerTop + 60 && distance < best) {
+      best = distance;
+      closest = card;
     }
+  });
+
+  (closest || cards[0]).classList.add("focused");
 }
 
 document.getElementById("eventScroll").addEventListener("scroll", updateFocusedCard);
 document.addEventListener("keydown", e => { if (e.key === "Escape") { closeModal(); closeKpiModal(); } });
-
-setTimeout(updateFocusedCard,100);
